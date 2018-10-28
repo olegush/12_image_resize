@@ -17,7 +17,7 @@ def parser_args():
 def resize_image(img):
     msgs = [
         'Can not resize the image because too much size parameters.\n',
-        'Aspect ratio does not match the original.\n',
+        'Please check aspect ratio, may be it does not match the original.\n',
         'No parameters for resize.\n',
         'The path is empty or does not exists. '
         'File saved in the current directory.\n',
@@ -28,19 +28,18 @@ def resize_image(img):
     width, height = im.size
     as_ratio = width / height
     if (img.width or img.height) and img.scale:
-        exit(msgs[0])
+        return msgs[0]
     elif img.scale:
         newsize = round(width * img.scale), round(height * img.scale)
     elif img.width and img.height:
-        if round(img.width / img.height, 2) != round(as_ratio, 2):
-            msg += msgs[1]
+        msg += msgs[1]
         newsize = img.width, img.height
     elif img.width:
         newsize = int(img.width), round(int(img.width) / as_ratio)
     elif img.height:
         newsize = round(int(img.height) * as_ratio), int(img.height)
     else:
-        exit(msg[2])
+        return msgs[2]
     filename = img.filepath.rsplit('.')[0]
     fileext = img.filepath.rsplit('.')[1]
     imgnew = im.resize(newsize, Image.ANTIALIAS)
