@@ -25,31 +25,36 @@ def resize_image(img):
     ]
     msg = ''
     im = Image.open(img.filepath)
-    width, height = im.size
-    as_ratio = width / height
-    if (img.width or img.height) and img.scale:
+    original_width, original_height = im.size
+    width = img.width
+    height = img.height
+    scale = img.scale
+    filepath = img.filepath
+    output = img.output
+    as_ratio = original_width / original_height
+    if (width or height) and scale:
         return msgs[0]
-    elif img.scale:
-        newsize = round(width * img.scale), round(height * img.scale)
-    elif img.width and img.height:
+    elif scale:
+        newsize = round(original_width * scale), round(original_height * scale)
+    elif width and height:
         msg += msgs[1]
-        newsize = img.width, img.height
-    elif img.width:
-        newsize = int(img.width), round(int(img.width) / as_ratio)
-    elif img.height:
-        newsize = round(int(img.height) * as_ratio), int(img.height)
+        newsize = width, height
+    elif width:
+        newsize = int(width), round(int(width) / as_ratio)
+    elif height:
+        newsize = round(int(height) * as_ratio), int(height)
     else:
         return msgs[2]
-    filename = img.filepath.rsplit('.')[0]
-    fileext = img.filepath.rsplit('.')[1]
+    filename = filepath.rsplit('.')[0]
+    fileext = filepath.rsplit('.')[1]
     imgnew = im.resize(newsize, Image.ANTIALIAS)
     newfilepath = '{}__{}x{}.{}'.format(filename,
                                         str(newsize[0]),
                                         str(newsize[1]),
                                         fileext
                                         )
-    if img.output is not None and os.path.isdir(str(img.output)):
-        newfilepath = img.output + '/' + newfilepath
+    if output is not None and os.path.isdir(str(output)):
+        newfilepath = output + '/' + newfilepath
     else:
         msg += msgs[3]
     imgnew.save(newfilepath)
