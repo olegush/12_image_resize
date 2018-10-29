@@ -32,19 +32,19 @@ def resize_image(img):
     filepath = img.filepath
     output = img.output
     as_ratio = original_width / original_height
+    if not(width or height or scale):
+        return msgs[2]
     if (width or height) and scale:
         return msgs[0]
-    elif scale:
+    if scale:
         newsize = round(original_width * scale), round(original_height * scale)
-    elif width and height:
+    if width and height:
         msg += msgs[1]
         newsize = width, height
     elif width:
         newsize = int(width), round(int(width) / as_ratio)
     elif height:
         newsize = round(int(height) * as_ratio), int(height)
-    else:
-        return msgs[2]
     filename = filepath.rsplit('.')[0]
     fileext = filepath.rsplit('.')[1]
     imgnew = im.resize(newsize, Image.ANTIALIAS)
