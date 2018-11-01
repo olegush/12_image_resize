@@ -3,10 +3,6 @@ import argparse
 from PIL import Image
 
 
-def open_img(filepath):
-    return Image.open(filepath)
-
-
 def get_args_parser():
     parser = argparse.ArgumentParser(description='image resizer')
     parser.add_argument('filepath', help='path to resizing file')
@@ -18,69 +14,68 @@ def get_args_parser():
     return args
 
 
-def print_messages(message_type):
-    msgs = {
-        'ratio': 'Aspect ratio does not match the original.\n',
-        'output': 'The path is not exists, will be save in the current dir.\n',
-        'final': 'The result file was saved.'
-    }
-    print(msgs[message_type])
+def print_errors(filepath, width, height, scale):
+    if width and width <= 0 or height and height <= 0 or scale and scale <= 0:
+        print('Can not resize, some parameters less than or equal to zero.\n')
+    elif not(width or height or scale):
+        print('No parameters for resize.\n')
+    elif (width or height) and scale:
+        print('Can not resize, too much size parameters.\n')
+    elif not os.path.isfile(filepath):
+        print('File not found')
+    else:
+        return True
 
 
-def calc_newsize(img_obj, width, height, scale):
-    original_width, original_height = img_obj.size
-    as_ratio = round(original_width / original_height, 2)
+def calc_new_size(orig_width, orig_height, width, height, scale, as_ratio):
     if scale:
-        newsize = round(original_width * scale), round(original_height * scale)
+        new_size = round(orig_width * scale), round(orig_height * scale)
     elif width and height:
-        newsize = width, height
-        if as_ratio != round(width/height, 2):
-            print_messages('ratio')
+        new_size = width, height
     elif width:
-        newsize = int(width), round(int(width) / as_ratio)
+        new_size = width, round(width / as_ratio)
     else:
-        newsize = round(int(height) * as_ratio), int(height)
-    return newsize
+        new_size = round(height * as_ratio), height
+    return new_size
 
 
-def resize_image(img_obj, newsize):
-    return img_obj.resize(newsize, Image.ANTIALIAS)
+def resize_image(img_obj, new_size):
+    return img_obj.resize(new_size, Image.ANTIALIAS)
 
 
-def give_path(filepath, newsize, output):
-    filename = filepath.rsplit('.')[0]
-    fileext = filepath.rsplit('.')[1]
-    newwidth = str(newsize[0])
-    newheight = str(newsize[1])
-    newfilepath = '{}__{}x{}.{}'.format(filename, newwidth, newheight, fileext)
-    if output and os.path.isdir(output):
-        newfilepath = os.path.join(output, newfilepath)
-    else:
-        print_messages('output')
-    return newfilepath
-
-
-def save_img(imgnew_obj, filepath):
-    imgnew_obj.save(filepath)
-    print_messages('final')
+def make_name(filepath, new_size):
+    filename, file_ext = filepath.rsplit('.')
+    new_width, new_height = new_size
+    return '{}__{}x{}.{}'.format(filename,
+                                 new_width,
+                                 new_height,
+                                 file_ext
+                                 )
 
 
 if __name__ == '__main__':
-    args_img = get_args_parser()
-    width = args_img.width
-    height = args_img.height
-    scale = args_img.scale
-    filepath = args_img.filepath
-    output = args_img.output
-    if not os.path.isfile(filepath):
-        exit('No such file')
-    if not(width or height or scale):
-        exit('No parameters for resize.\n')
-    elif (width or height) and scale:
-        exit('Can not resize the image because too much size parameters.\n')
+    args = get_args_parser()
+    width = args.width
+    height = args.height
+    scale = args.scale
+    filepath = args.filepath
+    output = args.output
+    if not print_errors(filepath, width, height, scale):
+        exit()
+    print('\nImage Resizer Log:')
+    img_obj = Image.open(filepath)
+    orig_width, orig_height = img_obj.size
+    as_ratio = round(orig_width / orig_height, 2)
+    new_size = calc_new_size(orig_width, orig_height, width, height, scale,
+                             as_ratio
+                             )
+    if as_ratio != round(new_size[0] / new_size[1], 2):
+        print('- aspect ratio does not match the original.')
+    img_new_obj = resize_image(img_obj, new_size)
+    new_filename = new_filepath = make_name(filepath, new_size)
+    if output and os.path.isdir(output):
+        new_filepath = os.path.join(output, new_filename)
     else:
-        img_obj = open_img(filepath)
-        newsize = calc_newsize(img_obj, width, height, scale)
-        imgnew_obj = resize_image(img_obj, newsize)
-        newpath = give_path(filepath, newsize, output)
-        save_img(imgnew_obj, newpath)
+        print('- the path is not exists, will be save in the same dir.')
+    img_new_obj.save(new_filepath)
+    print('- the result file was saved.')
