@@ -14,7 +14,7 @@ def get_args_parser():
     return args
 
 
-def print_errors(filepath, width, height, scale):
+def validate_args(filepath, width, height, scale):
     if width and width <= 0 or height and height <= 0 or scale and scale <= 0:
         print('Can not resize, some parameters less than or equal to zero.\n')
     elif not(width or height or scale):
@@ -43,14 +43,15 @@ def resize_image(img_obj, new_size):
     return img_obj.resize(new_size, Image.ANTIALIAS)
 
 
-def make_name(filepath, new_size):
-    filename, file_ext = filepath.rsplit('.')
+def make_name(full_filename, new_size):
+    file_name, file_ext = os.path.splitext(full_filename)
     new_width, new_height = new_size
-    return '{}__{}x{}.{}'.format(filename,
-                                 new_width,
-                                 new_height,
-                                 file_ext
-                                 )
+    return '{}__{}x{}{}'.format(
+        file_name,
+        new_width,
+        new_height,
+        file_ext
+    )
 
 
 if __name__ == '__main__':
@@ -60,7 +61,7 @@ if __name__ == '__main__':
     scale = args.scale
     filepath = args.filepath
     output = args.output
-    if not print_errors(filepath, width, height, scale):
+    if not validate_args(filepath, width, height, scale):
         exit()
     print('\nImage Resizer Log:')
     img_obj = Image.open(filepath)
@@ -72,10 +73,12 @@ if __name__ == '__main__':
     if as_ratio != round(new_size[0] / new_size[1], 2):
         print('- aspect ratio does not match the original.')
     img_new_obj = resize_image(img_obj, new_size)
-    new_filename = new_filepath = make_name(filepath, new_size)
+    dirpath, full_filename = os.path.split(filepath)
+    new_full_filename = make_name(full_filename, new_size)
     if output and os.path.isdir(output):
-        new_filepath = os.path.join(output, new_filename)
+        new_filepath = os.path.join(output, new_full_filename)
     else:
+        new_filepath = os.path.join(dirpath, new_full_filename)
         print('- the path is not exists, will be save in the same dir.')
     img_new_obj.save(new_filepath)
     print('- the result file was saved.')
