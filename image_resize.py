@@ -10,21 +10,20 @@ def get_args_parser():
     parser.add_argument('--height', help='height for resize', type=int)
     parser.add_argument('--scale', help='scale for resize', type=float)
     parser.add_argument('--output', help='path to directory for result file')
-    args = parser.parse_args()
-    return args
+    return parser
 
 
-def validate_args(filepath, width, height, scale):
-    if width and width <= 0 or height and height <= 0 or scale and scale <= 0:
-        print('Can not resize, some parameters less than or equal to zero.\n')
-    elif not(width or height or scale):
-        print('No parameters for resize.\n')
-    elif (width or height) and scale:
-        print('Can not resize, too much size parameters.\n')
-    elif not os.path.isfile(filepath):
-        print('File not found')
-    else:
-        return True
+def validate_args(filepath, width, height, scale, parser):
+    if not os.path.isfile(filepath):
+        parser.error('File not found')
+    if not(width or height or scale):
+        parser.error('No parameters for resize')
+    if (width or height) and scale:
+        parser.error('Can not resize, too much resize parameters')
+    if width == 0 or height == 0 or scale == 0:
+        parser.error('Can not resize, some parameters equal to zero.\n')
+    if width and width < 0 or height and height < 0 or scale and scale < 0:
+        parser.error('Can not resize, some parameters less than zero.\n')
 
 
 def calc_new_size(orig_width, orig_height, width, height, scale, as_ratio):
@@ -55,22 +54,22 @@ def make_name(full_filename, new_size):
 
 
 if __name__ == '__main__':
-    args = get_args_parser()
+    parser = get_args_parser()
+    args = parser.parse_args()
     width = args.width
     height = args.height
     scale = args.scale
     filepath = args.filepath
     output = args.output
-    if not validate_args(filepath, width, height, scale):
-        exit()
+    validate_args(filepath, width, height, scale, parser)
     print('\nImage Resizer Log:')
     img_obj = Image.open(filepath)
     orig_width, orig_height = img_obj.size
-    as_ratio = round(orig_width / orig_height, 2)
+    as_ratio = round(orig_width / orig_height, 1)
     new_size = calc_new_size(orig_width, orig_height, width, height, scale,
                              as_ratio
                              )
-    if as_ratio != round(new_size[0] / new_size[1], 2):
+    if as_ratio != round(new_size[0] / new_size[1], 1):
         print('- aspect ratio does not match the original.')
     img_new_obj = resize_image(img_obj, new_size)
     dirpath, full_filename = os.path.split(filepath)
